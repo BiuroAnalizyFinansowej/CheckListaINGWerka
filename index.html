@@ -143,7 +143,7 @@
     background-color: #c82333;
   }
 
-  /* Stylizacja listy checklisty (tak jak poprzednio) */
+  /* Stylizacja listy checklisty */
   .checklist-item {
     display: flex;
     align-items: center;
@@ -152,9 +152,8 @@
     cursor: pointer;
     transition: background-color 0.2s ease;
   }
-  .checklist-item:last-of-type {
+  .checklist-container .checklist-item:last-of-type {
     border-bottom: none;
-    margin-bottom: 15px; /* Dodatkowy margines przed notatkami */
   }
   .checklist-item:hover {
     background-color: #f9f9f9;
@@ -203,6 +202,42 @@
     color: var(--strikethrough-color);
   }
 
+  /* NOWOŚĆ: Sekcja dodawania nowego elementu checklisty */
+  .add-item-section {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+  }
+  .add-item-section input {
+    flex-grow: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.9em;
+  }
+  .add-item-section button {
+    flex-shrink: 0;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    border: none;
+    background-color: var(--primary-color-accent);
+    color: white;
+    font-size: 1.5em;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .add-item-section button:hover {
+    background-color: #005ea8;
+  }
+
   /* Sekcja na notatki */
   .notes-section {
     margin-top: auto; /* Pchnie notatki na dół karty */
@@ -210,6 +245,7 @@
     border-top: 1px solid var(--border-color);
     width: 100%;
     box-sizing: border-box;
+    margin-top: 15px;
   }
   .notes-section h4 {
     margin-top: 0;
@@ -242,7 +278,7 @@
       border-radius: 4px;
       overflow: hidden;
       margin-top: 10px;
-      margin-bottom: 15px;
+      margin-bottom: 5px;
   }
 
   .progress-bar {
@@ -257,8 +293,7 @@
       font-size: 0.85em;
       color: var(--text-secondary-color);
       text-align: right;
-      margin-top: 5px;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
   }
 
   /* Media Queries dla responsywności */
@@ -298,8 +333,8 @@
     </div>
 
   <script>
-    // Lista dokumentów, która będzie kopiowana dla każdego klienta
-    const documentChecklist = [
+    // Domyślna lista dokumentów dla nowych klientów
+    const defaultDocumentChecklist = [
       "PIT za rok ubiegły wraz z UPO",
       "KPIR bieżący",
       "Amortyzacja",
@@ -323,25 +358,15 @@
       if (!clientCard) return;
 
       const checkboxes = clientCard.querySelectorAll('.checklist-item input[type="checkbox"]');
-      let checkedCount = 0;
-      checkboxes.forEach(cb => {
-        if (cb.checked) {
-          checkedCount++;
-        }
-      });
-
+      const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
       const totalCount = checkboxes.length;
       const progressPercentage = totalCount === 0 ? 0 : (checkedCount / totalCount) * 100;
 
       const progressBar = clientCard.querySelector('.progress-bar');
       const progressText = clientCard.querySelector('.progress-text');
 
-      if (progressBar) {
-        progressBar.style.width = `${progressPercentage}%`;
-      }
-      if (progressText) {
-        progressText.textContent = `${checkedCount}/${totalCount} (${Math.round(progressPercentage)}%)`;
-      }
+      if (progressBar) progressBar.style.width = `${progressPercentage}%`;
+      if (progressText) progressText.textContent = `${checkedCount}/${totalCount} (${Math.round(progressPercentage)}%)`;
     }
 
     // Funkcja do zapisywania danych w localStorage
@@ -355,9 +380,13 @@
         notes: clientCard.querySelector('textarea').value
       };
 
-      clientCard.querySelectorAll('.checklist-item input[type="checkbox"]').forEach((checkbox, index) => {
+      // Zapisuje każdy element z listy, jego tekst, ID i stan zaznaczenia
+      clientCard.querySelectorAll('.checklist-item').forEach(item => {
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        const label = item.querySelector('label');
         clientData.checklist.push({
           id: checkbox.id,
+          text: label.textContent,
           checked: checkbox.checked
         });
       });
@@ -368,10 +397,30 @@
     // Funkcja do tworzenia nowej karty klienta
     function createClientCard(clientName, clientId = generateUUID(), savedData = null) {
       const clientsContainer = document.getElementById('clients-container');
-      
       const clientCard = document.createElement('div');
       clientCard.classList.add('client-card');
-      clientCard.dataset.clientId = clientId; // Ustawiamy unikalny ID dla karty
+      clientCard.dataset.clientId = clientId;
+
+      let checklistHTML = '';
+      // Jeśli są zapisane dane, odtwórz checklistę z nich
+      if (savedData && savedData.checklist && savedData.checklist.length > 0) {
+        checklistHTML = savedData.checklist.map(item => `
+          <div class="checklist-item" onclick="toggleCheckbox(this, '${clientId}')">
+            <input type="checkbox" id="${item.id}" ${item.checked ? 'checked' : ''}>
+            <span class="checkbox-custom"><span class="checkmark"></span></span>
+            <label for="${item.id}">${item.text}</label>
+          </div>
+        `).join('');
+      } else {
+        // W przeciwnym razie, utwórz nową, domyślną checklistę
+        checklistHTML = defaultDocumentChecklist.map((item, index) => `
+          <div class="checklist-item" onclick="toggleCheckbox(this, '${clientId}')">
+            <input type="checkbox" id="item-${clientId}-${index}">
+            <span class="checkbox-custom"><span class="checkmark"></span></span>
+            <label for="item-${clientId}-${index}">${item}</label>
+          </div>
+        `).join('');
+      }
 
       clientCard.innerHTML = `
         <button class="delete-client-btn" onclick="deleteClient('${clientId}')">&times;</button>
@@ -380,36 +429,55 @@
             <div class="progress-bar"></div>
         </div>
         <div class="progress-text">0/0 (0%)</div>
-        ${documentChecklist.map((item, index) => `
-          <div class="checklist-item" onclick="toggleCheckbox(this, '${clientId}')">
-            <input type="checkbox" id="item-${clientId}-${index}">
-            <span class="checkbox-custom"><span class="checkmark"></span></span>
-            <label for="item-${clientId}-${index}">${item}</label>
-          </div>
-        `).join('')}
+        <div class="checklist-container">
+          ${checklistHTML}
+        </div>
+        
+        <div class="add-item-section">
+          <input type="text" class="new-item-input" placeholder="Dodaj nowy dokument...">
+          <button onclick="addChecklistItem('${clientId}')">+</button>
+        </div>
         
         <div class="notes-section">
           <h4>Notatki / Uwagi</h4>
-          <textarea placeholder="Wpisz swoje uwagi tutaj..." oninput="saveClientData('${clientId}')"></textarea>
+          <textarea placeholder="Wpisz swoje uwagi tutaj..." oninput="saveClientData('${clientId}')">${savedData ? savedData.notes || '' : ''}</textarea>
         </div>
       `;
 
-      // Wczytanie zapisanych danych, jeśli są dostępne
-      if (savedData) {
-        savedData.checklist.forEach(savedItem => {
-          const checkbox = clientCard.querySelector(`#${savedItem.id}`);
-          if (checkbox) {
-            checkbox.checked = savedItem.checked;
-          }
-        });
-        const textarea = clientCard.querySelector('textarea');
-        if (textarea) {
-          textarea.value = savedData.notes || '';
-        }
-      }
-
       clientsContainer.appendChild(clientCard);
       updateProgressBar(clientId); // Zaktualizuj pasek postępu po utworzeniu/załadowaniu
+    }
+    
+    // NOWOŚĆ: Funkcja do dodawania nowego elementu do checklisty
+    function addChecklistItem(clientId) {
+      const clientCard = document.querySelector(`.client-card[data-client-id="${clientId}"]`);
+      if (!clientCard) return;
+
+      const input = clientCard.querySelector('.new-item-input');
+      const newItemText = input.value.trim();
+
+      if (newItemText) {
+        const checklistContainer = clientCard.querySelector('.checklist-container');
+        // Unikalne ID na podstawie czasu, by uniknąć kolizji
+        const newItemId = `item-${clientId}-${Date.now()}`; 
+
+        const newItemElement = document.createElement('div');
+        newItemElement.classList.add('checklist-item');
+        newItemElement.setAttribute('onclick', `toggleCheckbox(this, '${clientId}')`);
+        newItemElement.innerHTML = `
+            <input type="checkbox" id="${newItemId}">
+            <span class="checkbox-custom"><span class="checkmark"></span></span>
+            <label for="${newItemId}">${newItemText}</label>
+        `;
+        
+        checklistContainer.appendChild(newItemElement);
+        input.value = ''; // Wyczyść pole
+        
+        updateProgressBar(clientId);
+        saveClientData(clientId); // Zapisz stan po dodaniu
+      } else {
+        alert('Proszę wpisać treść nowego elementu.');
+      }
     }
 
     // Funkcja do dodawania klienta
@@ -420,8 +488,8 @@
       if (clientName) {
         const newClientId = generateUUID();
         createClientCard(clientName, newClientId);
-        saveClientData(newClientId); // Zapisz nowego klienta
-        newClientNameInput.value = ''; // Wyczyść pole po dodaniu
+        saveClientData(newClientId); // Zapisz nowego klienta od razu
+        newClientNameInput.value = '';
       } else {
         alert('Proszę wpisać nazwisko klienta.');
       }
@@ -433,29 +501,36 @@
         const clientCard = document.querySelector(`.client-card[data-client-id="${clientId}"]`);
         if (clientCard) {
           clientCard.remove();
-          localStorage.removeItem(`client_${clientId}`); // Usuń dane z localStorage
+          localStorage.removeItem(`client_${clientId}`);
         }
       }
     }
 
-    // Funkcja do przełączania checkboxa (wywoływana z onclick)
+    // Funkcja do przełączania checkboxa
     function toggleCheckbox(element, clientId) {
       const checkbox = element.querySelector('input[type="checkbox"]');
       checkbox.checked = !checkbox.checked;
-      saveClientData(clientId); // Zapisz zmiany w checklist
-      updateProgressBar(clientId); // Zaktualizuj pasek postępu
+      saveClientData(clientId);
+      updateProgressBar(clientId);
     }
 
     // Wczytaj wszystkich klientów z localStorage po załadowaniu strony
     document.addEventListener('DOMContentLoaded', () => {
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key.startsWith('client_')) {
-          const clientId = key.substring(7); // Usuń 'client_' aby dostać ID
-          const savedData = JSON.parse(localStorage.getItem(key));
-          createClientCard(savedData.name, clientId, savedData);
+      const clientKeys = Object.keys(localStorage).filter(key => key.startsWith('client_'));
+      
+      clientKeys.forEach(key => {
+        const clientId = key.substring(7);
+        try {
+            const savedData = JSON.parse(localStorage.getItem(key));
+            if (savedData && savedData.name) {
+                createClientCard(savedData.name, clientId, savedData);
+            }
+        } catch (e) {
+            console.error(`Błąd podczas parsowania danych dla klucza ${key}:`, e);
+            // Opcjonalnie: usuń nieprawidłowe dane
+            // localStorage.removeItem(key);
         }
-      }
+      });
     });
   </script>
 
