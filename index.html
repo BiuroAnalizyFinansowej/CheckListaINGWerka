@@ -25,7 +25,6 @@
 
   body {
     font-family: 'Inter', sans-serif;
-    /* ZMIANA: Zastąpiono gradient jednolitym kolorem tła */
     background: #000C69;
     color: var(--text-color);
     display: flex;
@@ -122,13 +121,16 @@
     cursor: pointer; /* Kursor wskazujący na klikalność */
     position: relative; /* Potrzebne dla pseudo-elementu strzałki */
     user-select: none; /* Zapobiega zaznaczaniu tekstu przy klikaniu */
+    /* ZMIANA: Dodano padding, aby zrobić miejsce na strzałkę po lewej */
+    padding-left: 25px;
   }
 
   /* Strzałka wskazująca stan zwinięcia/rozwinięcia */
   .client-card h3::after {
     content: '▲';
     position: absolute;
-    right: 5px;
+    /* ZMIANA: Przeniesiono strzałkę na lewą stronę */
+    left: 5px;
     top: 50%;
     transform: translateY(-50%);
     font-size: 0.8em;
@@ -496,7 +498,7 @@
     // Funkcja do dodawania nowego elementu do checklisty
     function addChecklistItem(clientId) {
       const clientCard = document.querySelector(`.client-card[data-client-id="${clientId}"]`);
-      if (!clientCard) return;
+      if (!client.card) return;
 
       const input = clientCard.querySelector('.new-item-input');
       const newItemText = input.value.trim();
