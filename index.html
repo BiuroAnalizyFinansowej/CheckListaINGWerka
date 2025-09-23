@@ -1,20 +1,32 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lista Dokumentów Klientów - ING Style</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  /* Zmienne CSS dla kolorów */
+  /* Zmienne CSS dla kolorów ING */
   :root {
-    --background-color-main: #000C69; /* Nowy granatowy kolor tła */
+    --background-color-main: #FF6600; /* Główny pomarańczowy ING */
+    --background-color-light: #FF8533; /* Jaśniejszy pomarańczowy */
     --card-background: #ffffff;
     --text-color: #333;
     --text-secondary-color: #777;
     --primary-color-accent: #0072d6; /* Niebieski jako akcent */
     --border-color: #e0e0e0;
-    --accent-color: #FF6600; /* Pomarańczowy jako kolor akcentujący */
+    --checkbox-checked-bg: #FF6600; /* Pomarańczowy dla zaznaczenia */
+    --checkbox-unchecked-border: #ccc;
     --strikethrough-color: #aaa;
+    --button-bg: #FF6600;
+    --button-hover-bg: #E65C00;
     --button-text: #ffffff;
   }
 
   body {
     font-family: 'Inter', sans-serif;
-    background-color: var(--background-color-main); /* Ustawienie tła */
+    /* ZMIANA: Zastąpiono gradient jednolitym kolorem tła */
+    background: #000C69;
     color: var(--text-color);
     display: flex;
     flex-direction: column;
@@ -45,7 +57,7 @@
     display: flex;
     gap: 15px;
     align-items: center;
-    flex-wrap: wrap; 
+    flex-wrap: wrap; /* Umożliwia zawijanie elementów na mniejszych ekranach */
     justify-content: center;
   }
 
@@ -60,7 +72,7 @@
 
   .add-client-section button {
     padding: 12px 25px;
-    background-color: var(--accent-color); /* Użycie koloru akcentującego */
+    background-color: var(--button-bg);
     color: var(--button-text);
     border: none;
     border-radius: 8px;
@@ -71,7 +83,7 @@
   }
 
   .add-client-section button:hover {
-    background-color: #E65C00; /* Ciemniejszy odcień pomarańczowego */
+    background-color: var(--button-hover-bg);
     transform: translateY(-1px);
   }
   .add-client-section button:active {
@@ -81,10 +93,10 @@
   /* Kontener na klientów */
   #clients-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Responsywny układ kolumn */
     gap: 25px;
     width: 100%;
-    max-width: 1200px;
+    max-width: 1200px; /* Maksymalna szerokość dla układu siatkowego */
   }
 
   /* Karta klienta */
@@ -95,8 +107,8 @@
     padding: 25px;
     display: flex;
     flex-direction: column;
-    min-height: 400px;
     position: relative;
+    transition: min-height 0.3s ease; /* Płynna zmiana wysokości */
   }
 
   .client-card h3 {
@@ -106,7 +118,39 @@
     margin-bottom: 20px;
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 10px;
-    color: var(--primary-color-accent);
+    color: var(--primary-color-accent); /* Akcent kolorystyczny dla nazwiska */
+    cursor: pointer; /* Kursor wskazujący na klikalność */
+    position: relative; /* Potrzebne dla pseudo-elementu strzałki */
+    user-select: none; /* Zapobiega zaznaczaniu tekstu przy klikaniu */
+  }
+
+  /* Strzałka wskazująca stan zwinięcia/rozwinięcia */
+  .client-card h3::after {
+    content: '▲';
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8em;
+    color: var(--text-secondary-color);
+    transition: transform 0.3s ease-out;
+  }
+
+  /* Obrót strzałki w stanie zwiniętym */
+  .client-card.collapsed h3::after {
+    transform: translateY(-50%) rotate(180deg);
+  }
+
+  /* Kontener na zwijaną zawartość */
+  .collapsible-content {
+      max-height: 1000px; /* Wystarczająco duża wysokość */
+      overflow: hidden;
+      transition: max-height 0.5s ease-in-out;
+  }
+
+  /* Ukrywanie zawartości w stanie zwiniętym */
+  .client-card.collapsed .collapsible-content {
+      max-height: 0;
   }
 
   /* Przycisk usuwania klienta */
@@ -141,9 +185,8 @@
     cursor: pointer;
     transition: background-color 0.2s ease;
   }
-  .checklist-item:last-of-type {
+  .checklist-container .checklist-item:last-of-type {
     border-bottom: none;
-    margin-bottom: 15px;
   }
   .checklist-item:hover {
     background-color: #f9f9f9;
@@ -181,26 +224,61 @@
     flex-grow: 1;
   }
   .checklist-item input[type="checkbox"]:checked + .checkbox-custom {
-    background-color: var(--accent-color);
-    border-color: var(--accent-color);
+    background-color: var(--checkbox-checked-bg);
+    border-color: var(--checkbox-checked-bg);
   }
-  
   .checklist-item input[type="checkbox"]:checked + .checkbox-custom .checkmark {
     display: block;
   }
-
   .checklist-item input[type="checkbox"]:checked ~ label {
     text-decoration: line-through;
     color: var(--strikethrough-color);
   }
 
+  /* Sekcja dodawania nowego elementu checklisty */
+  .add-item-section {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+  }
+  .add-item-section input {
+    flex-grow: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.9em;
+  }
+  .add-item-section button {
+    flex-shrink: 0;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    border: none;
+    background-color: var(--primary-color-accent);
+    color: white;
+    font-size: 1.5em;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .add-item-section button:hover {
+    background-color: #005ea8;
+  }
+
   /* Sekcja na notatki */
   .notes-section {
-    margin-top: auto;
+    margin-top: auto; /* Pchnie notatki na dół karty */
     padding-top: 15px;
     border-top: 1px solid var(--border-color);
     width: 100%;
     box-sizing: border-box;
+    margin-top: 15px;
   }
   .notes-section h4 {
     margin-top: 0;
@@ -233,12 +311,12 @@
       border-radius: 4px;
       overflow: hidden;
       margin-top: 10px;
-      margin-bottom: 15px;
+      margin-bottom: 5px;
   }
 
   .progress-bar {
       height: 100%;
-      background-color: var(--accent-color);
+      background-color: var(--checkbox-checked-bg);
       width: 0%;
       border-radius: 4px;
       transition: width 0.3s ease-out;
@@ -248,8 +326,7 @@
       font-size: 0.85em;
       color: var(--text-secondary-color);
       text-align: right;
-      margin-top: 5px;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
   }
 
   /* Media Queries dla responsywności */
@@ -265,7 +342,7 @@
       min-width: unset;
     }
     #clients-container {
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr; /* Jedna kolumna na małych ekranach */
     }
     .client-card {
       padding: 20px;
@@ -275,3 +352,232 @@
     }
   }
 </style>
+</head>
+<body>
+
+  <h1>Zarządzanie Klientami</h1>
+
+  <div class="add-client-section">
+    <input type="text" id="newClientName" placeholder="Wpisz nazwisko klienta">
+    <button id="addClientButton">Dodaj Klienta</button>
+  </div>
+
+  <div id="clients-container">
+    </div>
+
+  <script>
+    // Domyślna lista dokumentów dla nowych klientów
+    const defaultDocumentChecklist = [
+      "PIT za rok ubiegły wraz z UPO",
+      "KPIR bieżący",
+      "Amortyzacja",
+      "Wyciągi firmowe z 6 ostatnich miesięcy (z którego płacony ZUS i US)",
+      "Jeśli ZUS jest nie terminowo to zaświadczenie o niezaleganiu do wniosku",
+      "Formatka",
+      "Notatka z wizyty"
+    ];
+
+    // Funkcja generująca unikalny ID
+    function generateUUID() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    // Funkcja do aktualizacji paska postępu
+    function updateProgressBar(clientId) {
+      const clientCard = document.querySelector(`.client-card[data-client-id="${clientId}"]`);
+      if (!clientCard) return;
+
+      const checkboxes = clientCard.querySelectorAll('.checklist-item input[type="checkbox"]');
+      const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+      const totalCount = checkboxes.length;
+      const progressPercentage = totalCount === 0 ? 0 : (checkedCount / totalCount) * 100;
+
+      const progressBar = clientCard.querySelector('.progress-bar');
+      const progressText = clientCard.querySelector('.progress-text');
+
+      if (progressBar) progressBar.style.width = `${progressPercentage}%`;
+      if (progressText) progressText.textContent = `${checkedCount}/${totalCount} (${Math.round(progressPercentage)}%)`;
+    }
+
+    // Funkcja do zapisywania danych w localStorage
+    function saveClientData(clientId) {
+      const clientCard = document.querySelector(`.client-card[data-client-id="${clientId}"]`);
+      if (!clientCard) return;
+
+      const clientData = {
+        name: clientCard.querySelector('h3').textContent,
+        checklist: [],
+        notes: clientCard.querySelector('textarea').value
+      };
+
+      // Zapisuje każdy element z listy, jego tekst, ID i stan zaznaczenia
+      clientCard.querySelectorAll('.checklist-item').forEach(item => {
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        const label = item.querySelector('label');
+        clientData.checklist.push({
+          id: checkbox.id,
+          text: label.textContent,
+          checked: checkbox.checked
+        });
+      });
+
+      localStorage.setItem(`client_${clientId}`, JSON.stringify(clientData));
+    }
+
+    // Funkcja do tworzenia nowej karty klienta
+    function createClientCard(clientName, clientId = generateUUID(), savedData = null) {
+      const clientsContainer = document.getElementById('clients-container');
+      const clientCard = document.createElement('div');
+      clientCard.classList.add('client-card');
+      clientCard.dataset.clientId = clientId;
+
+      let checklistHTML = '';
+      // Jeśli są zapisane dane, odtwórz checklistę z nich
+      if (savedData && savedData.checklist && savedData.checklist.length > 0) {
+        checklistHTML = savedData.checklist.map(item => `
+          <div class="checklist-item" onclick="toggleCheckbox(this, '${clientId}')">
+            <input type="checkbox" id="${item.id}" ${item.checked ? 'checked' : ''}>
+            <span class="checkbox-custom"><span class="checkmark"></span></span>
+            <label for="${item.id}">${item.text}</label>
+          </div>
+        `).join('');
+      } else {
+        // W przeciwnym razie, utwórz nową, domyślną checklistę
+        checklistHTML = defaultDocumentChecklist.map((item, index) => `
+          <div class="checklist-item" onclick="toggleCheckbox(this, '${clientId}')">
+            <input type="checkbox" id="item-${clientId}-${index}">
+            <span class="checkbox-custom"><span class="checkmark"></span></span>
+            <label for="item-${clientId}-${index}">${item}</label>
+          </div>
+        `).join('');
+      }
+
+      // Zmodyfikowana struktura z kontenerem .collapsible-content
+      clientCard.innerHTML = `
+        <button class="delete-client-btn" onclick="deleteClient('${clientId}')">&times;</button>
+        <h3 onclick="toggleCollapse('${clientId}')">${clientName}</h3>
+        
+        <div class="collapsible-content">
+            <div class="progress-bar-container">
+                <div class="progress-bar"></div>
+            </div>
+            <div class="progress-text">0/0 (0%)</div>
+            <div class="checklist-container">
+              ${checklistHTML}
+            </div>
+            
+            <div class="add-item-section">
+              <input type="text" class="new-item-input" placeholder="Dodaj nowy dokument...">
+              <button onclick="addChecklistItem('${clientId}')">+</button>
+            </div>
+        </div>
+        
+        <div class="notes-section">
+          <h4>Notatki / Uwagi</h4>
+          <textarea placeholder="Wpisz swoje uwagi tutaj..." oninput="saveClientData('${clientId}')">${savedData ? savedData.notes || '' : ''}</textarea>
+        </div>
+      `;
+
+      clientsContainer.appendChild(clientCard);
+      updateProgressBar(clientId); // Zaktualizuj pasek postępu po utworzeniu/załadowaniu
+    }
+    
+    // Funkcja do zwijania/rozwijania listy
+    function toggleCollapse(clientId) {
+        const clientCard = document.querySelector(`.client-card[data-client-id="${clientId}"]`);
+        if (clientCard) {
+            clientCard.classList.toggle('collapsed');
+        }
+    }
+
+    // Funkcja do dodawania nowego elementu do checklisty
+    function addChecklistItem(clientId) {
+      const clientCard = document.querySelector(`.client-card[data-client-id="${clientId}"]`);
+      if (!clientCard) return;
+
+      const input = clientCard.querySelector('.new-item-input');
+      const newItemText = input.value.trim();
+
+      if (newItemText) {
+        const checklistContainer = clientCard.querySelector('.checklist-container');
+        // Unikalne ID na podstawie czasu, by uniknąć kolizji
+        const newItemId = `item-${clientId}-${Date.now()}`; 
+
+        const newItemElement = document.createElement('div');
+        newItemElement.classList.add('checklist-item');
+        newItemElement.setAttribute('onclick', `toggleCheckbox(this, '${clientId}')`);
+        newItemElement.innerHTML = `
+            <input type="checkbox" id="${newItemId}">
+            <span class="checkbox-custom"><span class="checkmark"></span></span>
+            <label for="${newItemId}">${newItemText}</label>
+        `;
+        
+        checklistContainer.appendChild(newItemElement);
+        input.value = ''; // Wyczyść pole
+        
+        updateProgressBar(clientId);
+        saveClientData(clientId); // Zapisz stan po dodaniu
+      } else {
+        alert('Proszę wpisać treść nowego elementu.');
+      }
+    }
+
+    // Funkcja do dodawania klienta
+    document.getElementById('addClientButton').addEventListener('click', () => {
+      const newClientNameInput = document.getElementById('newClientName');
+      const clientName = newClientNameInput.value.trim();
+
+      if (clientName) {
+        const newClientId = generateUUID();
+        createClientCard(clientName, newClientId);
+        saveClientData(newClientId); // Zapisz nowego klienta od razu
+        newClientNameInput.value = '';
+      } else {
+        alert('Proszę wpisać nazwisko klienta.');
+      }
+    });
+
+    // Funkcja do usuwania klienta
+    function deleteClient(clientId) {
+      if (confirm('Czy na pewno chcesz usunąć tego klienta?')) {
+        const clientCard = document.querySelector(`.client-card[data-client-id="${clientId}"]`);
+        if (clientCard) {
+          clientCard.remove();
+          localStorage.removeItem(`client_${clientId}`);
+        }
+      }
+    }
+
+    // Funkcja do przełączania checkboxa
+    function toggleCheckbox(element, clientId) {
+      const checkbox = element.querySelector('input[type="checkbox"]');
+      checkbox.checked = !checkbox.checked;
+      // Zatrzymaj propagację, aby kliknięcie nie wywołało toggleCollapse
+      event.stopPropagation(); 
+      saveClientData(clientId);
+      updateProgressBar(clientId);
+    }
+
+    // Wczytaj wszystkich klientów z localStorage po załadowaniu strony
+    document.addEventListener('DOMContentLoaded', () => {
+      const clientKeys = Object.keys(localStorage).filter(key => key.startsWith('client_'));
+      
+      clientKeys.forEach(key => {
+        const clientId = key.substring(7);
+        try {
+            const savedData = JSON.parse(localStorage.getItem(key));
+            if (savedData && savedData.name) {
+                createClientCard(savedData.name, clientId, savedData);
+            }
+        } catch (e) {
+            console.error(`Błąd podczas parsowania danych dla klucza ${key}:`, e);
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>
